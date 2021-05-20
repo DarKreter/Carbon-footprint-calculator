@@ -1,0 +1,81 @@
+private double Water(double numberOfBathPerWeek, double numberOfShowersPerWeek, int heatingSource, int howManyWaterInBath, int bathSize)
+        {
+            /*
+             numberOfBathPerWeek - ilosc kapieli w tyg
+             numberOfShowersPerWeek - ilosc prysznicy w tyg
+             heatingSource - indeks zrodla ogrzewania [0, 6]
+             howManyWaterInBath - indeks napelnienia wanny [0, 2]
+             bathSize - indeks wielkosci wanny [0, 2]
+             */
+            //POBRANIE DANYCH i WZORY
+            const int smallBathSize = 180, mediumBathSize = 300, largeBathSize = 500; //[l]
+            const double averageHumanWeight  = 70;   //[kg]
+            const double averageHumanDensity = 1.05; //[kg/dm3]
+            const double averageHumanVolume  = averageHumanWeight / averageHumanDensity; //[dm3]
+            const double filledBathFulfillmentCoefficient       = 1.0,
+                         halfFilledBathFulfillmentCoefficient   = 2.0 / 3.0,
+                         hardlyFilledBathFulfillmentCoefficient = 1.0 / 3.0;
+            const double averageLitersPerShower = 130;
+            const double waterDensity = 1, coldWaterTemperature = 10, hotWaterTemperature = 55,
+                deltaTemperature = hotWaterTemperature - coldWaterTemperature,
+                daysPerYear = 365, specificHeatOfWater = 4190; ///[J]
+            const double correctionFactor = 0.9;
+
+            Dictionary<KeyValuePair<int, int>, double> literConverter
+                 = new Dictionary<KeyValuePair<int, int>, double>();
+            { 
+                literConverter.Add(new KeyValuePair<int, int>(0, 0), (smallBathSize - averageHumanVolume)  * hardlyFilledBathFulfillmentCoefficient);
+                literConverter.Add(new KeyValuePair<int, int>(0, 1), (smallBathSize - averageHumanVolume)  * halfFilledBathFulfillmentCoefficient);
+                literConverter.Add(new KeyValuePair<int, int>(0, 2), (smallBathSize - averageHumanVolume)  * filledBathFulfillmentCoefficient);
+                literConverter.Add(new KeyValuePair<int, int>(1, 0), (mediumBathSize - averageHumanVolume) * hardlyFilledBathFulfillmentCoefficient);
+                literConverter.Add(new KeyValuePair<int, int>(1, 1), (mediumBathSize - averageHumanVolume) * halfFilledBathFulfillmentCoefficient);
+                literConverter.Add(new KeyValuePair<int, int>(1, 2), (mediumBathSize - averageHumanVolume) * filledBathFulfillmentCoefficient);
+                literConverter.Add(new KeyValuePair<int, int>(2, 0), (largeBathSize - averageHumanVolume)  * hardlyFilledBathFulfillmentCoefficient);
+                literConverter.Add(new KeyValuePair<int, int>(2, 1), (largeBathSize - averageHumanVolume)  * halfFilledBathFulfillmentCoefficient);
+                literConverter.Add(new KeyValuePair<int, int>(2, 2), (largeBathSize - averageHumanVolume)  * filledBathFulfillmentCoefficient);
+            }
+
+            KeyValuePair<int, int> bathDataBind = new KeyValuePair<int, int>(bathSize, howManyWaterInBath);
+
+            ///TE ZMIENNE SA MI POTRZEBNE W UZYCIU WZOROW I TRZEBA DOPROWADZIC DO SYTUACJI ICH UZYSKANIA JAK TUTAJ
+            double litersOfOneBath = literConverter[bathDataBind]; ///ilosc zuzytych litrow z jednej kapieli
+
+            double litersPerWeek = numberOfShowersPerWeek * averageLitersPerShower + numberOfBathPerWeek * litersOfOneBath;
+            double litersPerDay = (litersPerWeek / 7.0) * (4.0 / 9.0 ); ///Mamy ile litrow przypada na jeden dzien
+
+
+            double kWhPerYear = ((litersPerDay * waterDensity) * deltaTemperature * specificHeatOfWater * daysPerYear / 3600000) * correctionFactor;
+            //                  <            masa           >                                        
+            //                  <                                     J per year                                   >
+            //                  <                                     kWh per year                                            >
+
+            Dictionary<int, Tuple<double, double, double>> kWhAndCO2_Correction
+                 = new Dictionary<int, Tuple<double, double, double>>(); ///Poprawki w produkcji kWh uwzgledniajac wspolczynniki cieplne, sprawnosci źródeł ciepła oraz zużycia prądu na wytwarzanie ciepła przez poszczególne źrodła
+                                                                 ///Trzeci element krotki to wspolczynnik by otrzymac kg CO2 z kWh
+            {
+                kWhAndCO2_Correction.Add(0, new Tuple<double, double, double>(1, 0, 0.341)   );
+                kWhAndCO2_Correction.Add(1, new Tuple<double, double, double>(1.25, 280, 0.278) );
+                kWhAndCO2_Correction.Add(2, new Tuple<double, double, double>(1.05, 170, 0.154) );
+                kWhAndCO2_Correction.Add(3, new Tuple<double, double, double>(1.25, 280, 0.279) );
+                kWhAndCO2_Correction.Add(4, new Tuple<double, double, double>(1.4, 400, 0.0) );
+                kWhAndCO2_Correction.Add(5, new Tuple<double, double, double>(0, kWhPerYear / 4.0, 0.0));
+                kWhAndCO2_Correction.Add(6, new Tuple<double, double, double>(1, 0, 0.778));
+            }
+
+            ///ZROBIENIE CO TRZEBA Z WYNIKIEM
+            try
+            {
+                double real_kWhPerYear = kWhAndCO2_Correction[heatingSource].Item1 * kWhPerYear;
+                double kWhPerYear_Electricity = kWhAndCO2_Correction[heatingSource].Item2;
+
+                double kgOfCO2perYear = kWhAndCO2_Correction[heatingSource].Item3 * real_kWhPerYear;
+                kgOfCO2perYear += kWhPerYear_Electricity * kWhAndCO2_Correction[6].Item3;
+
+                return Math.Round(kgOfCO2perYear / 1000.0, 3);
+            }
+            catch (Exception)
+            {
+                return -100;
+            }
+
+        }

@@ -1,0 +1,94 @@
+private double Consumption(int meatF, int hmye, int bags, int frigde, bool[] devices, int households) ///devices ma miec 16 elementow
+        {
+            /*
+             meatF - idenks czestotliwosci jedzenia miesa
+             hmye - idenks ilosci jedzenia
+             bags - idenks czestotliwosci uzytkowania toreb jednorazowych
+             frigde - indeks wielkosci lodowki
+             devices(boole czy posiadasz)
+                komputer    DVD         Mikrofalowka        kuchenka elektryczna        zestaw audio
+                toster      telewizor   zmywarka            suszarka do wlosow          pralka
+                zelazko     czajnik     mikser              odkurzacz                   piekarnik
+                ekspresDoKawy
+
+             households - ilosc domownikow
+             */
+            const double countryAverageMeatMassPerYear = 70.0;
+            const double countryAverageMeatMassDay     = countryAverageMeatMassPerYear / 365.0;
+            const double kgOfMeatTokgCO2 = 5.5;
+            double kgCO2perDay = 0;
+            double kgCO2perYear = 0;
+            double kgOfMeatPerDay = 0;
+            double kWhPerDay = 0;
+
+            switch (meatF)
+            {
+                case 0:
+                    break;
+                case 1:
+                    kgOfMeatPerDay += (countryAverageMeatMassDay * 1.5) / 7.0;
+                    break;
+                case 2:
+                    kgOfMeatPerDay += (countryAverageMeatMassDay * 4.0) / 7.0;
+                    break;
+                default:
+                    kgOfMeatPerDay += (countryAverageMeatMassDay * 6.5) / 7.0;
+                    break;
+            }
+            kgCO2perDay = kgOfMeatTokgCO2 * kgOfMeatPerDay;
+
+            if (hmye == 0)
+                kgCO2perDay *= 0.8;
+            if (hmye == 2)
+                kgCO2perDay *= 1.2;
+
+            kgCO2perYear += bags * 0.2 * 52;
+
+            if(devices[0] == true)
+                kWhPerDay += 0.15 * 5.0 / households; ///150W 5 h dziennie
+            if(devices[1] == true)
+                kWhPerDay += 0.04 * 2.0 * 2.0/ 7.0 / households; //40W razy 2h filmu 2 razy na tydzien
+            if (devices[2] == true)
+                kWhPerDay += 1.0 * (3.0 / 60.0); //10 minut dziennie 1000W
+            if (devices[3] == true)
+                kWhPerDay += 5.0 * (4.0 / 7.0) / households; ///5000W 4 razy tyg 1h
+            if (devices[4] == true)
+                kWhPerDay += 0.2 * 2.0 / households;   ///Okolo 200W bo takie audio ma 800 srednio 1/4 glosnosci i 2h dziennie
+            if (devices[5] == true)
+                kWhPerDay += 0.9 * 4.0 / 7.0 * (3.0 / 60.0);    ///900W 4 razy w tygodniu po 3 minuty trwa robienie tosta
+            if (devices[6] == true)
+                kWhPerDay += 0.05 * 4.0 / households; ///50W 4h razy dziennie
+            if (devices[7] == true)
+                kWhPerDay += 200.0 / 365.0 / households; ///srednio 200kWh srednio rocznie zuzywa
+            if (devices[8] == true)
+                kWhPerDay += 1.8 * 0.1 * (3.0 / 7.0); ///1800W  (10 / 60) 10 minut 3 razy w tygodniu
+            if (devices[9] == true)
+                kWhPerDay += 150.0 / 365.0 / households; ///150kWh rocznie srednio zuzywa pralka
+            if (devices[10] == true)
+                kWhPerDay += 2.5 * 0.5 * 2.0 / 7.0 / households; ///2500W 2 razy w tygodniu po 10 minut
+            if (devices[11] == true)
+                kWhPerDay += 2.0 * 3.0 / 60.0 * 3.0; ///Trzy minuty podgrzewania wody raz dziennie 2000W
+            if (devices[12] == true)
+                kWhPerDay += 0.3 * (2.0 / 7.0) * (5.0 / 60.0) / households; ///300W 2 razy w tygodniu po 5 minut
+            if (devices[13] == true)
+                kWhPerDay += 1.6 * (8.0 / 30.0) * (15.0 / 60.0) / households;    ///1600W 8 razy w miesiacu po 15 godziny
+            if (devices[14] == true)
+                kWhPerDay += 2.0 * (2.0 / 7.0) / households; ///2000W przez godzine 3 razy w tyg
+            if (devices[15] == true)
+                kWhPerDay += 1.5 * (1.0 / 60.0) * 2; ///1500W przez minute 2 razy dziennie
+
+            kWhPerDay *= 1.1;   ///Dodanie stanu spoczynku kazdego urzadzenia
+
+            if (frigde == 0)
+                kWhPerDay += 1.0 / households;
+            if (frigde == 1)
+                kWhPerDay += 2.0 / households;
+            if (frigde == 2)
+                kWhPerDay += 3.0 / households;
+
+            kgCO2perDay += kWhPerDay * 0.778;
+
+            kgCO2perYear += kgCO2perDay * 365;
+
+            return Math.Round(kgCO2perYear / 1000.0, 3);
+        }

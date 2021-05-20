@@ -1,0 +1,38 @@
+double OwnTransport(int pojazd, double KMperT, double LperKm, int paliwo)
+        {
+            double wynik = 0;
+
+            /*
+             pojazd - indeks rodzaju pojazdu [0, 5]
+             paliwo - indeks rodzaju paliwa [0, 3]
+             KMperT - ilosc km na tydzien
+             LperKm - Litry na 100km
+             */
+
+            double litrow = KMperT / 100.0d * LperKm;
+
+            if (pojazd == 0)
+                goto end;
+
+
+            if (paliwo== 0)
+                wynik += 0.141 * litrow;
+            else if (paliwo== 1)
+                wynik += 0.157 * litrow;
+            else if (paliwo== 2)
+                wynik += 0.0877 * litrow;
+            else if (paliwo == 3)
+                if (pojazd == 1)
+                    wynik += 0.00181 * KMperT;
+                else if (pojazd == 2)
+                    wynik += 0.00722 * KMperT;
+                else if (pojazd == 3)
+                    wynik += 0.0108 * KMperT;
+                else if (pojazd == 4)
+                    wynik += 0.0162 * KMperT;
+                else if (pojazd == 5)
+                    wynik += 0.0262 * KMperT;
+
+            end:
+            return Math.Round(wynik, 3);
+        }

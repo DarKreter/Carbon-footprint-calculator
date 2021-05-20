@@ -1,0 +1,134 @@
+private double  House(int metersOfHouse, int numberOfLodgers, int typeOfHouse, int insulationLevel, int typeOfVentilation,
+            int temperatureInWinter, int airConditioningFrequency, int bulbType, int heatingSource)
+        {
+            /*
+             metersOfHouse - ilosc metrow kwadratowych
+             numberOfLodgers - ilosc domownikow
+             typeOfHouse - indeks rodzaju budynku [0, 3]
+             insulationLevel - indeks izolacji domu [0, 3]
+             typeOfVentilation - indeks rodzaju wentylacji [0, 2]
+             temperatureInWinter - idneks temperatury podgrzewanej Zimą [0, 2]
+             airConditioningFrequency - indeks uzytkowanie klimatyzacji [0, 3]
+             bulbType - indeks rodzaju zarowek [0, 2]
+             heatingSource - idenks zrodla ogrzewania [0, 6]
+             */
+
+
+            Dictionary<Tuple<int, int>, int> insulationAndTypeOfHouse
+                 = new Dictionary<Tuple<int, int>, int>(); //ilosc kWh/m^2 na podstawie rodzaju budynku i izolacji
+
+            Dictionary<int, int> temperatureCoefficient
+                 = new Dictionary<int, int>();  //kWh/m^2 dodane z ciepła w budynku 
+
+            Dictionary<int, int> bulbsCoefficients
+                = new Dictionary<int, int>();  //kWh/m^2 dodane z żarówek
+
+            Dictionary<Tuple<int, int>, int> ventilationCoefficients
+                 = new Dictionary<Tuple<int, int>, int>(); //wentylacja
+
+            Dictionary<Tuple<int, int>, Tuple<double, int>> airConditionCoefficients
+                 = new Dictionary<Tuple<int, int>, Tuple<double, int>>(); //klima
+
+            Dictionary<int, Tuple<double, double, double>> kWhAndCO2_Correction
+            = new Dictionary<int, Tuple<double, double, double>>(); ///Poprawki w produkcji kWh uwzgledniajac wspolczynniki cieplne, sprawnosci źródeł ciepła oraz zużycia prądu na wytwarzanie ciepła przez poszczególne źrodła
+                                                                    ///Trzeci element krotki to wspolczynnik by otrzymac kg CO2 z kWh
+            { 
+                airConditionCoefficients.Add(new Tuple<int, int>(0, 3), new Tuple<double, int>(4, 800));
+                airConditionCoefficients.Add(new Tuple<int, int>(0, 2), new Tuple<double, int>(3, 500));
+                airConditionCoefficients.Add(new Tuple<int, int>(0, 1), new Tuple<double, int>(1.5, 300));
+                airConditionCoefficients.Add(new Tuple<int, int>(1, 3), new Tuple<double, int>(3, 800));
+                airConditionCoefficients.Add(new Tuple<int, int>(1, 2), new Tuple<double, int>(2, 500));
+                airConditionCoefficients.Add(new Tuple<int, int>(1, 1), new Tuple<double, int>(1, 300));
+                airConditionCoefficients.Add(new Tuple<int, int>(2, 3), new Tuple<double, int>(1, 800));
+                airConditionCoefficients.Add(new Tuple<int, int>(2, 2), new Tuple<double, int>(0.5, 500));
+                airConditionCoefficients.Add(new Tuple<int, int>(2, 1), new Tuple<double, int>(0.3, 300));
+
+                ventilationCoefficients.Add(new Tuple<int, int>(0, 0), 28);
+                ventilationCoefficients.Add(new Tuple<int, int>(0, 1), 35);
+                ventilationCoefficients.Add(new Tuple<int, int>(0, 2), 41);
+                ventilationCoefficients.Add(new Tuple<int, int>(1, 0), 22);
+                ventilationCoefficients.Add(new Tuple<int, int>(1, 1), 27);
+                ventilationCoefficients.Add(new Tuple<int, int>(1, 2), 32);
+                ventilationCoefficients.Add(new Tuple<int, int>(2, 0), 5);
+                ventilationCoefficients.Add(new Tuple<int, int>(2, 1), 7);
+                ventilationCoefficients.Add(new Tuple<int, int>(2, 2), 8);
+
+                insulationAndTypeOfHouse.Add(new Tuple<int, int>(0, 0), 80);
+                insulationAndTypeOfHouse.Add(new Tuple<int, int>(0, 1), 60);
+                insulationAndTypeOfHouse.Add(new Tuple<int, int>(0, 2), 40);
+                insulationAndTypeOfHouse.Add(new Tuple<int, int>(0, 3), 20);
+                insulationAndTypeOfHouse.Add(new Tuple<int, int>(1, 0), 60);
+                insulationAndTypeOfHouse.Add(new Tuple<int, int>(1, 1), 45);
+                insulationAndTypeOfHouse.Add(new Tuple<int, int>(1, 2), 30);
+                insulationAndTypeOfHouse.Add(new Tuple<int, int>(1, 3), 20);
+                insulationAndTypeOfHouse.Add(new Tuple<int, int>(2, 0), 40);
+                insulationAndTypeOfHouse.Add(new Tuple<int, int>(2, 1), 30);
+                insulationAndTypeOfHouse.Add(new Tuple<int, int>(2, 2), 20);
+                insulationAndTypeOfHouse.Add(new Tuple<int, int>(2, 3), 15);
+                insulationAndTypeOfHouse.Add(new Tuple<int, int>(3, 0), 40);
+                insulationAndTypeOfHouse.Add(new Tuple<int, int>(3, 1), 30);
+                insulationAndTypeOfHouse.Add(new Tuple<int, int>(3, 2), 20);
+                insulationAndTypeOfHouse.Add(new Tuple<int, int>(3, 3), 15);
+
+                temperatureCoefficient.Add(0, -5);
+                temperatureCoefficient.Add(1, 0);
+                temperatureCoefficient.Add(2, 5);
+
+                bulbsCoefficients.Add(0, 30);
+                bulbsCoefficients.Add(1, 15);
+                bulbsCoefficients.Add(2, 5);
+
+            }
+
+
+
+            try
+            {
+                double kWhEnergyPerM2 = 0, kWhElectricity = 0, kWhEnergy = 0;
+                double A = insulationAndTypeOfHouse[new Tuple<int, int>(typeOfHouse, insulationLevel)];
+
+                kWhEnergyPerM2 += A;
+
+                kWhEnergyPerM2 += temperatureCoefficient[temperatureInWinter];
+
+                kWhEnergyPerM2 += ventilationCoefficients[new Tuple<int, int>(typeOfVentilation, temperatureInWinter)];
+
+                if (airConditioningFrequency != 0)
+                {
+                    kWhEnergyPerM2 += airConditionCoefficients[new Tuple<int, int>(typeOfVentilation, airConditioningFrequency)].Item1;
+                    kWhElectricity  += airConditionCoefficients[new Tuple<int, int>(typeOfVentilation, airConditioningFrequency)].Item2;
+                }
+
+                {
+                    kWhAndCO2_Correction.Add(0, new Tuple<double, double, double>(1, 0, 0.341));
+                    kWhAndCO2_Correction.Add(1, new Tuple<double, double, double>(1.25, 280, 0.278));
+                    kWhAndCO2_Correction.Add(2, new Tuple<double, double, double>(1.05, 170, 0.154));
+                    kWhAndCO2_Correction.Add(3, new Tuple<double, double, double>(1.25, 280, 0.279));
+                    kWhAndCO2_Correction.Add(4, new Tuple<double, double, double>(1.4, 400, 0.0));
+                    kWhAndCO2_Correction.Add(5, new Tuple<double, double, double>(0, A / 4.0 * metersOfHouse, 0.0));
+                    kWhAndCO2_Correction.Add(6, new Tuple<double, double, double>(1, 0, 0.778));
+                }
+                kWhEnergyPerM2 *= kWhAndCO2_Correction[heatingSource].Item1;
+                kWhElectricity  += kWhAndCO2_Correction[heatingSource].Item2;
+
+                kWhElectricity  += bulbsCoefficients[bulbType] * metersOfHouse;
+
+                kWhEnergy = kWhEnergyPerM2 * metersOfHouse;
+
+                kWhEnergy       /= numberOfLodgers;
+                kWhElectricity  /= numberOfLodgers;
+
+                double kgCO2Electricity = kWhElectricity * kWhAndCO2_Correction[6].Item3;
+                double kgCO2Energy = kWhEnergy * kWhAndCO2_Correction[heatingSource].Item3;
+
+                double result = kgCO2Electricity + kgCO2Energy;
+
+                return Math.Round(result / 1000.0, 3);
+            }
+            catch (Exception)
+            {
+                return -100;
+
+            }
+
+        }

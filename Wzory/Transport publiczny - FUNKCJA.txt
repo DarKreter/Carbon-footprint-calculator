@@ -1,0 +1,25 @@
+ public double PublicTransport(double autobus, double tramwaj, double metro, double pociag, double planeShort1, double planeShort2, double planeShort3,
+            double planeLong1, double planeLong2, double planeLong3)
+        {
+            /*
+             wszystko w km / tyg
+             autobus, tramwaj, metro, pociag nazwy oznaczaja jakich srodkow sa to kilometrarze
+
+            samoloty to godzine rocznie w danym samolocie
+            Short oznacza loty do 2000km
+            Long ponad 2000km
+            1 - klasa Ekonomiczna
+            2 - Biznesowa
+            3 - Pierwsza
+             */
+
+
+            double wyynik = 0, wynikPlanee = 0;
+
+            wyynik = 0.00217 * autobus + (tramwaj + metro) * 0.00261 + 0.00377 * pociag;
+
+
+            wynikPlanee = 0.24 * planeShort1  + 0.2 * planeLong1 + 0.48 * planeShort2  + 0.4 * planeLong2 + 0.72 * planeShort3 + 0.6 * planeLong3;
+
+            return Math.Round(wyynik + wynikPlanee, 3);
+        }
